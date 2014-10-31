@@ -49,7 +49,7 @@ def pushing():
                    				delivery_mode = mode,                    # make message persistent
                    				))
 		logging.basicConfig(format='%(asctime)s %(message)s', filename='info.log', level=logging.INFO)
-		logging.info(connection, valid_mes)
+		logging.info(confirmation, valid_mes)
 		#we need to add queue - #queue_tocken = 'tocken'.join(id)...
 	else:
 		channel.queue_declare(queue=queue_httpL)

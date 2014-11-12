@@ -11,6 +11,6 @@ def deploy():
     venv.install()
     put("validation.py", ROOT)
     put("lv128_Validator.service", ROOT)
-    run("sudo mv %s/lv128_Validator.service etc/systemd/system/" % ROOT)
+    run("sudo mv %slv128_Validator.service /etc/systemd/system/" % ROOT)
     run("sudo systemctl enable lv128_Validator")
     run("sudo systemctl restart lv128_Validator")

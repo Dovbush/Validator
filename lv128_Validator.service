@@ -4,7 +4,7 @@ Description=LVWEB-128 Validation
 [Service]
 User=deploy
 Group=deploy
-Environment="APPDIR=/opt/lv128/Validation/"
+Environment="APPDIR=/opt/lv128/Validation"
 ExecStart=/bin/bash -c "source $APPDIR/bin/activate ; python $APPDIR/validation.py -l $APPDIR/../log/yaps-validation.log -p 8881"
 
 [Install]

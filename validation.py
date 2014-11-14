@@ -2,7 +2,7 @@
 import logging
 import pika
 
-LOG_LOCATION= "/opt/lv128/Validation/yaps-validation.log"
+LOG_LOCATION= "/opt/lv128/log/Validation.log"
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 
 QUEUE_VALIDATION = "validation.messages"

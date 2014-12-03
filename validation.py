@@ -2,7 +2,7 @@
 import logging
 import pika
 
-LOG_LOCATION= "/opt/lv128/log/validation.log"
+LOG_LOCATION= "validation.log"
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 
 QUEUE_VALIDATION = "validation.messages"
@@ -24,6 +24,19 @@ class Validation():
     where message is ready to be sent to consumer.
     In other case - it moves to the queue with refused messages
     """
+    def connect(self):
+        if self.connecting:
+            pika.log.info('Already connecting to RabbitMQ.')
+            return
+        pika.log.info("Connecting to RabbitMQ")
+        self.connecting = True
+        creds = pika.PlainCredentials('lv128', 'lv128')
+        params = pika.ConnectionParameters(host='localhost', port=8080,
+                                           virtual_host='/', credentials=creds)
+        self.connection = TornadoConnection(params,
+                                            on_open_callback=self.on_connect)
+        self.connection.add_on_close_callback(self.on_closed)
+      
     def __init__(self):
         self.log = logging.getLogger(LOG_LOCATION)
         self.log.setLevel(logging.INFO)
@@ -76,5 +89,11 @@ if __name__ == '__main__':
     for x in xrange(5):
         print x
         v.valid()
+    credentials = pika.PlainCredentials('lv128', 'lv128')
+    parameters = pika.ConnectionParameters('localhost',
+                                       8080,
+                                       '/',
+                                       credentials)
+    parameters1 = pika.URLParameters('http://lv128:lv128@localhost:8080/%2F')
     
     

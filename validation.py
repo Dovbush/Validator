@@ -31,7 +31,7 @@ class Validation():
         pika.log.info("Connecting to RabbitMQ")
         self.connecting = True
         creds = pika.PlainCredentials('lv128', 'lv128')
-        params = pika.ConnectionParameters(host='localhost', port=8080,
+        params = pika.ConnectionParameters(host='localhost', port=5672,
                                            virtual_host='/', credentials=creds)
         self.connection = TornadoConnection(params,
                                             on_open_callback=self.on_connect)
@@ -89,5 +89,7 @@ if __name__ == '__main__':
     for x in xrange(5):
         print x
         v.valid()
+    v.connect()    
+    
     
     

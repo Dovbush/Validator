@@ -35,16 +35,16 @@ class Validation():
         self.log.addHandler(log_hand)
         try:
             if self.connecting:
-                pika.log.info('Already connecting to RabbitMQ.')
+            pika.log.info('Already connecting to RabbitMQ.')
             return
-                pika.log.info("Connecting to RabbitMQ")
-            self.connecting = True
-            creds = pika.PlainCredentials('lv128', 'lv128')
-            params = pika.ConnectionParameters(host='localhost', port=5672,
+        pika.log.info("Connecting to RabbitMQ")
+        self.connecting = True
+        creds = pika.PlainCredentials('lv128', 'lv128')
+        params = pika.ConnectionParameters(host='localhost', port=8080,
                                            virtual_host='/', credentials=creds)
-            self.connection = TornadoConnection(params,
+        self.connection = TornadoConnection(params,
                                             on_open_callback=self.on_connect)
-            self.connection.add_on_close_callback(self.on_closed)
+        self.connection.add_on_close_callback(self.on_closed)
         except:
             self.log.exception(CONNECT_OFF)
             raise

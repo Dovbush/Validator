@@ -40,8 +40,7 @@ class Validation():
         log_hand.setFormatter(formatter)
         self.log.addHandler(log_hand)
         try:
-            self.connection = pika.BlockingConnection(
-                                pika.ConnectionParameters(parameters))
+            self.connection = pika.BlockingConnection(parameters)
             self.log.info(CONNECT_ON)
         except:
             self.log.exception(CONNECT_OFF)

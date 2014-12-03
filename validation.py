@@ -48,10 +48,7 @@ class Validation():
             quit()
 
     def valid(self):
-        try:
-            tmp_msg = self.get_msg(QUEUE_VALIDATION)
-        except:
-            self.log.exception(EMPTY)
+        tmp_msg = self.get_msg(QUEUE_VALIDATION)
 
         if len(tmp_msg) < MAX_LENGTH:
             self.log.info(GOOD_MSG, tmp_msg)
@@ -67,20 +64,16 @@ class Validation():
             self.log.info(CONNECT_ON)
             self.log.info(body)
             channel.basic_ack(method_frame.delivery_tag)
-            #channel.close_channel()
             return body
         
     def send_msg(self, my_queue, msg_body):
         channel = self.connection.channel()
-        channel.queue_declare(queue=my_queue)
         channel.basic_publish(exchange='', routing_key=my_queue, body=msg_body)
 
 
 if __name__ == '__main__':
     v = Validation()
-    for x in xrange(5):
-        print x
-        v.valid()
+    v.valid()
     
     
     

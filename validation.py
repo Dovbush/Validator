@@ -41,7 +41,7 @@ class Validation():
         self.log.addHandler(log_hand)
         try:
             self.connection = pika.BlockingConnection(
-                                pika.ConnectionParameters(RABBITMQ_SERVER))
+                                pika.ConnectionParameters(parameters))
             self.log.info(CONNECT_ON)
         except:
             self.log.exception(CONNECT_OFF)

@@ -24,18 +24,6 @@ class Validation():
     where message is ready to be sent to consumer.
     In other case - it moves to the queue with refused messages
     """
-    def connect(self):
-        if self.connecting:
-            pika.log.info('Already connecting to RabbitMQ.')
-            return
-        pika.log.info("Connecting to RabbitMQ")
-        self.connecting = True
-        creds = pika.PlainCredentials('lv128', 'lv128')
-        params = pika.ConnectionParameters(host='localhost', port=5672,
-                                           virtual_host='/', credentials=creds)
-        self.connection = TornadoConnection(params,
-                                            on_open_callback=self.on_connect)
-        self.connection.add_on_close_callback(self.on_closed)
       
     def __init__(self):
         self.log = logging.getLogger(LOG_LOCATION)
@@ -46,9 +34,17 @@ class Validation():
         log_hand.setFormatter(formatter)
         self.log.addHandler(log_hand)
         try:
-            self.connection = pika.BlockingConnection(
-                                pika.ConnectionParameters(RABBITMQ_SERVER))
-            self.log.info(CONNECT_ON)
+            if self.connecting:
+                pika.log.info('Already connecting to RabbitMQ.')
+            return
+                pika.log.info("Connecting to RabbitMQ")
+            self.connecting = True
+            creds = pika.PlainCredentials('lv128', 'lv128')
+            params = pika.ConnectionParameters(host='localhost', port=5672,
+                                           virtual_host='/', credentials=creds)
+            self.connection = TornadoConnection(params,
+                                            on_open_callback=self.on_connect)
+            self.connection.add_on_close_callback(self.on_closed)
         except:
             self.log.exception(CONNECT_OFF)
             raise
@@ -89,7 +85,6 @@ if __name__ == '__main__':
     for x in xrange(5):
         print x
         v.valid()
-    v.connect()    
     
     
     

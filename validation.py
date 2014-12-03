@@ -52,7 +52,6 @@ class Validation():
             tmp_msg = self.get_msg(QUEUE_VALIDATION)
         except:
             self.log.exception(EMPTY)
-            quit()
 
         if len(tmp_msg) < MAX_LENGTH:
             self.log.info(GOOD_MSG, tmp_msg)

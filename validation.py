@@ -89,11 +89,5 @@ if __name__ == '__main__':
     for x in xrange(5):
         print x
         v.valid()
-    credentials = pika.PlainCredentials('lv128', 'lv128')
-    parameters = pika.ConnectionParameters('localhost',
-                                       8080,
-                                       '/',
-                                       credentials)
-    parameters1 = pika.URLParameters('http://lv128:lv128@localhost:8080/%2F')
     
     

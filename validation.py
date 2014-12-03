@@ -26,6 +26,12 @@ class Validation():
     """
       
     def __init__(self):
+        credentials = pika.PlainCredentials('lv128', 'lv128')
+        parameters = pika.ConnectionParameters('localhost',
+                                       5672,
+                                       '/',
+                                       credentials)
+    
         self.log = logging.getLogger(LOG_LOCATION)
         self.log.setLevel(logging.INFO)
         log_hand = logging.FileHandler(LOG_LOCATION)
@@ -34,17 +40,9 @@ class Validation():
         log_hand.setFormatter(formatter)
         self.log.addHandler(log_hand)
         try:
-            if self.connecting:
-            pika.log.info('Already connecting to RabbitMQ.')
-            return
-        pika.log.info("Connecting to RabbitMQ")
-        self.connecting = True
-        creds = pika.PlainCredentials('lv128', 'lv128')
-        params = pika.ConnectionParameters(host='localhost', port=8080,
-                                           virtual_host='/', credentials=creds)
-        self.connection = TornadoConnection(params,
-                                            on_open_callback=self.on_connect)
-        self.connection.add_on_close_callback(self.on_closed)
+            self.connection = pika.BlockingConnection(
+                                pika.ConnectionParameters(RABBITMQ_SERVER))
+            self.log.info(CONNECT_ON)
         except:
             self.log.exception(CONNECT_OFF)
             raise

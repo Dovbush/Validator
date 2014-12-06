@@ -73,6 +73,7 @@ class Validation():
         else:
             self.send_msg(QUEUE_HTTPLISTENER, MISSING_ELEMENTS)
             self.log.error(MISSING_ELEMENTS)
+            pass
             
     def get_msg(self, my_queue):
         """The function takes message from the queue"""

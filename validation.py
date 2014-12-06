@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+
 import logging
 import pika
+from time import sleep
 
 LOG_LOCATION= "validation.log"
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
@@ -8,14 +10,16 @@ LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 QUEUE_VALIDATION = "validation.messages"
 QUEUE_HTTPLISTENER = "httplistener"
 QUEUE_MSG_ALL = "message.all"
+QUEUE_UUID = "message"
 RABBITMQ_SERVER = "localhost"
 CONNECT_ON = "connected to rabbitmq"
 CONNECT_OFF = "no connection to rabbitmq"
 EMPTY = "can't consume - queue is empty"
-
-GOOD_MSG = "Response 200 - OK"
-BAD_MSG = "Error 400 - Bad requst"
 MAX_LENGTH = 128
+GOOD_MSG = "Response 200 - OK"
+BAD_LENGTH = "Error 400 - Bad requst, message is longer than %s" % MAX_LENGTH
+MISSING_ELEMENTS = "Error 400 - Bad requst, hex, token or message are missing"
+MODE = 2
 
 
 class Validation():
@@ -26,12 +30,12 @@ class Validation():
     """
       
     def __init__(self):
-        credentials = pika.PlainCredentials('lv128', 'lv128')
+        credentials = pika.PlainCredentials('guest', 'guest')
         parameters = pika.ConnectionParameters('localhost',
                                        5672,
                                        '/',
                                        credentials)
-    
+        
         self.log = logging.getLogger(LOG_LOCATION)
         self.log.setLevel(logging.INFO)
         log_hand = logging.FileHandler(LOG_LOCATION)
@@ -42,38 +46,56 @@ class Validation():
         try:
             self.connection = pika.BlockingConnection(parameters)
             self.log.info(CONNECT_ON)
+            self.channel = self.connection.channel()
         except:
             self.log.exception(CONNECT_OFF)
             raise
             quit()
 
     def valid(self):
-        tmp_msg = self.get_msg(QUEUE_VALIDATION)
+        """Every messages must have 3 elements: hex, token and message
+           Every message is checked for length"""
 
-        if len(tmp_msg) < MAX_LENGTH:
-            self.log.info(GOOD_MSG + " " + tmp_msg)
-            self.send_msg(QUEUE_MSG_ALL, tmp_msg)
-            self.send_msg(QUEUE_HTTPLISTENER, GOOD_MSG)
+        my_msg = self.get_msg(QUEUE_VALIDATION)
+        test_msg = my_msg.split(":")
+        queue_uuid = test_msg[1]
+        my_message = test_msg[2]
+        if len(test_msg) == 3 :
+            if len(my_message) < MAX_LENGTH :
+                self.log.info(GOOD_MSG + " " + my_message)
+                self.send_msg(QUEUE_MSG_ALL, my_message)
+                self.send_msg((QUEUE_UUID + "-" + queue_uuid), my_message)
+                self.send_msg(QUEUE_HTTPLISTENER, GOOD_MSG)
+            else:
+                self.send_msg(QUEUE_HTTPLISTENER, BAD_LENGTH)
+                self.log.error(BAD_LENGTH)
+                pass
         else:
-            self.send_msg(QUEUE_HTTPLISTENER, BAD_MSG)
-            self.log.error(BAD_MSG)
-        
+            self.send_msg(QUEUE_HTTPLISTENER, MISSING_ELEMENTS)
+            self.log.error(MISSING_ELEMENTS)
+            
     def get_msg(self, my_queue):
-        channel = self.connection.channel()
-        for method_frame, properties, body in channel.consume(my_queue):
+        """The function takes message from the queue"""
+
+        self.channel.queue_declare(my_queue)
+        for method_frame, properties, body in self.channel.consume(my_queue):
+            print body
             self.log.info(CONNECT_ON)
             self.log.info(body)
-            channel.basic_ack(method_frame.delivery_tag)
+            self.channel.basic_ack(method_frame.delivery_tag)
             return body
         
     def send_msg(self, my_queue, msg_body):
-        channel = self.connection.channel()
-        channel.basic_publish(exchange='', routing_key=my_queue, body=msg_body)
+        """The function send message to another queue"""
+
+        self.channel.queue_declare(my_queue)
+        self.channel.basic_publish(exchange='', routing_key=my_queue, body=msg_body, 
+                                properties=pika.BasicProperties(delivery_mode=MODE))
 
 
 if __name__ == '__main__':
     v = Validation()
-    v.valid()
-    
-    
-    
+    while True:
+        v.valid()
+        sleep(0.5)
+

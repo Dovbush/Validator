@@ -16,6 +16,7 @@ CONNECT_ON = "connected to rabbitmq"
 CONNECT_OFF = "no connection to rabbitmq"
 EMPTY = "can't consume - queue is empty"
 MAX_LENGTH = 128
+MAX_NUMBER_FIELD = 3
 GOOD_MSG = "Response 200 - OK"
 BAD_LENGTH = "Error 400 - Bad requst, message is longer than %s" % MAX_LENGTH
 MISSING_ELEMENTS = "Error 400 - Bad requst, hex, token or message are missing"
@@ -30,7 +31,7 @@ class Validation():
     """
       
     def __init__(self):
-        credentials = pika.PlainCredentials('guest', 'guest')
+        credentials = pika.PlainCredentials('lv128', 'lv128')
         parameters = pika.ConnectionParameters('localhost',
                                        5672,
                                        '/',
@@ -60,21 +61,19 @@ class Validation():
         test_msg = my_msg.split(":")
         queue_uuid = test_msg[1]
         my_message = test_msg[2]
-        if len(test_msg) == 3 :
-            if len(my_message) < MAX_LENGTH :
-                self.log.info(GOOD_MSG + " " + my_message)
-                self.send_msg(QUEUE_MSG_ALL, my_message)
-                self.send_msg((QUEUE_UUID + "-" + queue_uuid), my_message)
-                self.send_msg(QUEUE_HTTPLISTENER, GOOD_MSG)
-            else:
+        if len(test_msg) == MAX_NUMBER_FIELD and len(my_message) < MAX_LENGTH :
+            self.log.info(GOOD_MSG + " " + my_message)
+            self.send_msg(QUEUE_MSG_ALL, my_message)
+            self.send_msg((QUEUE_UUID + "-" + queue_uuid), my_message)
+            self.send_msg(QUEUE_HTTPLISTENER, GOOD_MSG)
+        else:
+            if len(test_msg) != MAX_NUMBER_FIELD :
+                self.send_msg(QUEUE_HTTPLISTENER, MISSING_ELEMENTS)                
+                self.log.error(MISSING_ELEMENTS)
+            elif len(my_message) < MAX_LENGTH :
                 self.send_msg(QUEUE_HTTPLISTENER, BAD_LENGTH)
                 self.log.error(BAD_LENGTH)
-                pass
-        else:
-            self.send_msg(QUEUE_HTTPLISTENER, MISSING_ELEMENTS)
-            self.log.error(MISSING_ELEMENTS)
-            pass
-            
+        
     def get_msg(self, my_queue):
         """The function takes message from the queue"""
 

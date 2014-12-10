@@ -4,13 +4,13 @@ import logging
 import pika
 from time import sleep
 
-LOG_LOCATION= "validation.log"
+LOG_LOCATION= "/opt/lv128/log/validation.log"
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 
 QUEUE_VALIDATION = "validation.messages"
 QUEUE_HTTPLISTENER = "httplistener"
 QUEUE_MSG_ALL = "message.all"
-QUEUE_UUID = "message"
+QUEUE_UUID = "message."
 RABBITMQ_SERVER = "localhost"
 CONNECT_ON = "connected to rabbitmq"
 CONNECT_OFF = "no connection to rabbitmq"
@@ -20,7 +20,6 @@ MAX_NUMBER_FIELD = 3
 GOOD_MSG = "Response 200 - OK"
 BAD_LENGTH = "Error 400 - Bad requst, message is longer than %s" % MAX_LENGTH
 MISSING_ELEMENTS = "Error 400 - Bad requst, hex, token or message are missing"
-MODE = 2
 
 
 class Validation():
@@ -64,7 +63,7 @@ class Validation():
         if len(test_msg) == MAX_NUMBER_FIELD and len(my_message) < MAX_LENGTH :
             self.log.info(GOOD_MSG + " " + my_message)
             self.send_msg(QUEUE_MSG_ALL, my_message)
-            self.send_msg((QUEUE_UUID + "-" + queue_uuid), my_message)
+            self.send_msg((QUEUE_UUID + queue_uuid), my_message)
             self.send_msg(QUEUE_HTTPLISTENER, GOOD_MSG)
         else:
             if len(test_msg) != MAX_NUMBER_FIELD :
@@ -89,13 +88,11 @@ class Validation():
         """The function send message to another queue"""
 
         self.channel.queue_declare(my_queue)
-        self.channel.basic_publish(exchange='', routing_key=my_queue, body=msg_body, 
-                                properties=pika.BasicProperties(delivery_mode=MODE))
-
+        self.channel.basic_publish(exchange='', routing_key=my_queue, body=msg_body)
+                                
 
 if __name__ == '__main__':
     v = Validation()
     while True:
         v.valid()
         sleep(0.5)
-

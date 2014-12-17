@@ -80,7 +80,7 @@ class Validation():
         total += 1
         success += 1
        # self.sql_cursor.execute('UPDATE users SET Total_msg=%s, Success_msg=%s WHERE Login="%s"' % (total, success))
-        self.sql_cursor.execute('UPDATE my_app_msg SET total_msg_counter=%s, success_msg_counter=%s WHERE user_id='SELECT * FROM my_app_profile' % (total, success))
+        self.sql_cursor.execute('UPDATE my_app_msg SET total_msg_counter=%s, success_msg_counter=%s WHERE user_id='SELECT user_id FROM my_app_profile' % (total, success))
 
 
     def update_failed(record):
@@ -88,7 +88,7 @@ class Validation():
         total += 1
         fail += 1
        # self.sql_cursor.execute('UPDATE users SET Total_msg=%s, Failed_msg=%s WHERE Login="%s"' % (total, fail))
-         self.sql_cursor.execute('UPDATE my_app_msg SET total_msg_counter=%s, failed_msg_counter=%s WHERE user_id='SELECT * FROM my_app_profile' % (total, fail))
+         self.sql_cursor.execute('UPDATE my_app_msg SET total_msg_counter=%s, failed_msg_counter=%s WHERE user_id='SELECT user_id FROM my_app_profile' % (total, fail))
 
     def get_valid_record(self, token):
         self.sql_cursor.execute('SELECT * FROM my_app_profile WHERE token=%s' % token)

@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 
 import logging
+
+import sqlite3 # or mysql connector
+
 import pika
 from time import sleep
 
-LOG_LOCATION= "/opt/lv128/log/validation.log"
+import mysql.connector
+
+LOG_LOCATION= "validation.log"
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 
 QUEUE_VALIDATION = "validation.messages"
@@ -14,28 +19,32 @@ QUEUE_UUID = "message."
 RABBITMQ_SERVER = "localhost"
 CONNECT_ON = "connected to rabbitmq"
 CONNECT_OFF = "no connection to rabbitmq"
+SQL_CONNECT_ON = "connected to sql"
+SQL_CONNECT_OFF = "no connection to sql"
 EMPTY = "can't consume - queue is empty"
 MAX_LENGTH = 128
 MAX_NUMBER_FIELD = 3
 GOOD_MSG = "Response 200 - OK"
 BAD_LENGTH = "Error 400 - Bad requst, message is longer than %s" % MAX_LENGTH
+INVALID_TOKEN = "Error 406 - Invalid token."
 MISSING_ELEMENTS = "Error 400 - Bad requst, hex, token or message are missing"
 
 
 class Validation():
     """
-    the message form validation queue is moving to the next queue 
+    the message form validation queue is moving to the next queue
     where message is ready to be sent to consumer.
     In other case - it moves to the queue with refused messages
     """
-      
+
     def __init__(self):
+       # credentials = pika.PlainCredentials('guest', 'guest')
         credentials = pika.PlainCredentials('lv128', 'lv128')
         parameters = pika.ConnectionParameters('localhost',
                                        5672,
                                        '/',
                                        credentials)
-        
+
         self.log = logging.getLogger(LOG_LOCATION)
         self.log.setLevel(logging.INFO)
         log_hand = logging.FileHandler(LOG_LOCATION)
@@ -43,6 +52,20 @@ class Validation():
         formatter = logging.Formatter(LOG_FORMAT)
         log_hand.setFormatter(formatter)
         self.log.addHandler(log_hand)
+        try:
+
+            #self.sql_conn = sqlite3.connect('users.db') # or mysql db connect
+            #mysql DB
+           self.sql_conn =mysql.connector.connect(user='root', password='root',
+                              host='127.0.0.1',
+                              database='YAPS')
+
+            self.sql_cursor = conn.cursor()
+            self.log.info(SQL_CONNECT_ON)
+        except:
+            self.log.exception(SQL_CONNECT_OFF)
+            raise
+
         try:
             self.connection = pika.BlockingConnection(parameters)
             self.log.info(CONNECT_ON)
@@ -52,6 +75,27 @@ class Validation():
             raise
             quit()
 
+    def update_user_counters(record):
+        login, f_name, token, total, success, fail = record
+        total += 1
+        success += 1
+       # self.sql_cursor.execute('UPDATE users SET Total_msg=%s, Success_msg=%s WHERE Login="%s"' % (total, success))
+        self.sql_cursor.execute('UPDATE my_app_msg SET total_msg_counter=%s, success_msg_counter=%s WHERE user_id='SELECT * FROM my_app_profile' % (total, success))
+
+
+    def update_failed(record):
+        login, f_name, token, total, success, fail = record
+        total += 1
+        fail += 1
+       # self.sql_cursor.execute('UPDATE users SET Total_msg=%s, Failed_msg=%s WHERE Login="%s"' % (total, fail))
+         self.sql_cursor.execute('UPDATE my_app_msg SET total_msg_counter=%s, failed_msg_counter=%s WHERE user_id='SELECT * FROM my_app_profile' % (total, fail))
+
+    def get_valid_record(self, token):
+        self.sql_cursor.execute('SELECT * FROM my_app_profile WHERE token=%s' % token)
+        for record in self.sql_cursor.fetchall():
+            # return first match
+            return record
+
     def valid(self):
         """Every messages must have 3 elements: hex, token and message
            Every message is checked for length"""
@@ -60,19 +104,27 @@ class Validation():
         test_msg = my_msg.split(":")
         queue_uuid = test_msg[1]
         my_message = test_msg[2]
-        if len(test_msg) == MAX_NUMBER_FIELD and len(my_message) < MAX_LENGTH :
-            self.log.info(GOOD_MSG + " " + my_message)
-            self.send_msg(QUEUE_MSG_ALL, my_message)
-            self.send_msg((QUEUE_UUID + queue_uuid), my_message)
-            self.send_msg(QUEUE_HTTPLISTENER, GOOD_MSG)
+        valid_record = self.get_valid_record(queue_uuid)
+        if len(test_msg) == MAX_NUMBER_FIELD and len(my_message) < MAX_LENGTH and valid_record:
+                self.update_user_counters(valid_record)
+                self.log.info(GOOD_MSG + " " + my_message)
+                self.send_msg(QUEUE_MSG_ALL, my_message)
+                self.send_msg((QUEUE_UUID + queue_uuid), my_message)
+                self.send_msg(QUEUE_HTTPLISTENER, GOOD_MSG)
         else:
             if len(test_msg) != MAX_NUMBER_FIELD :
-                self.send_msg(QUEUE_HTTPLISTENER, MISSING_ELEMENTS)                
+                self.send_msg(QUEUE_HTTPLISTENER, MISSING_ELEMENTS)
                 self.log.error(MISSING_ELEMENTS)
             elif len(my_message) < MAX_LENGTH :
+                if valid_record:
+                    # token is valid but message could not be sent
+                    self.update_failed(valid_record)
                 self.send_msg(QUEUE_HTTPLISTENER, BAD_LENGTH)
                 self.log.error(BAD_LENGTH)
-        
+            else:
+                self.log.error(INVALID_TOKEN)
+
+
     def get_msg(self, my_queue):
         """The function takes message from the queue"""
 
@@ -83,13 +135,13 @@ class Validation():
             self.log.info(body)
             self.channel.basic_ack(method_frame.delivery_tag)
             return body
-        
+
     def send_msg(self, my_queue, msg_body):
         """The function send message to another queue"""
 
         self.channel.queue_declare(my_queue)
         self.channel.basic_publish(exchange='', routing_key=my_queue, body=msg_body)
-                                
+
 
 if __name__ == '__main__':
     v = Validation()

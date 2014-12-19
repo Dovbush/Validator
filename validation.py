@@ -59,7 +59,7 @@ class Validation():
 
             #self.sql_conn = sqlite3.connect('users.db') # or mysql db connect
             #mysql DB
-            self.sql_conn =mysql.connector.connect(user='root', password='root',
+            self.sql_conn =mysql.connector.connect(user='root', password='',
                               host='127.0.0.1',
                               database='YAPS')
 

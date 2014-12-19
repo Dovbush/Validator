@@ -28,6 +28,9 @@ GOOD_MSG = "Response 200 - OK"
 BAD_LENGTH = "Error 400 - Bad requst, message is longer than %s" % MAX_LENGTH
 INVALID_TOKEN = "Error 406 - Invalid token."
 MISSING_ELEMENTS = "Error 400 - Bad requst, hex, token or message are missing"
+GET_USER_COUNTERS = "SELECT total_msg_counter, success_msg_counter, failed_msg_counter from my_app_msg WHERE user_id={0}"
+UPDATE_USER_COUNTERS = "UPDATE my_app_msg SET total_msg_counter={0}, success_msg_counter={1}, failed_msg_counter={2}  WHERE user_id={3}"
+FIND_PROFILE_BY_TOKEN = "SELECT * FROM my_app_profile WHERE token={0}"
 
 
 class Validation():
@@ -56,7 +59,7 @@ class Validation():
 
             #self.sql_conn = sqlite3.connect('users.db') # or mysql db connect
             #mysql DB
-           self.sql_conn =mysql.connector.connect(user='root', password='root',
+            self.sql_conn =mysql.connector.connect(user='root', password='root',
                               host='127.0.0.1',
                               database='YAPS')
 
@@ -75,23 +78,15 @@ class Validation():
             raise
             quit()
 
-    def update_user_counters(record):
-        login, f_name, token, total, success, fail = record
-        total += 1
-        success += 1
-       # self.sql_cursor.execute('UPDATE users SET Total_msg=%s, Success_msg=%s WHERE Login="%s"' % (total, success))
-        self.sql_cursor.execute('UPDATE my_app_msg SET total_msg_counter=%s, success_msg_counter=%s WHERE user_id='SELECT user_id FROM my_app_profile' % (total, success))
+    def update_user_counters(self, record, is_valid):
+        is_valid = 1 if is_valid else 0
 
-
-    def update_failed(record):
-        login, f_name, token, total, success, fail = record
-        total += 1
-        fail += 1
-       # self.sql_cursor.execute('UPDATE users SET Total_msg=%s, Failed_msg=%s WHERE Login="%s"' % (total, fail))
-         self.sql_cursor.execute('UPDATE my_app_msg SET total_msg_counter=%s, failed_msg_counter=%s WHERE user_id='SELECT user_id FROM my_app_profile' % (total, fail))
-
+        id, token, user_id = record
+        self.sql_cursor.execute(GET_USER_COUNTERS.format(user_id))
+        total, success, fail = self.sql_cursor.fetchone()
+        self.sql_cursor.execute(UPDATE_USER_COUNTERS.format(total + 1, success + int(is_valid), fail + int(not is_valid),  user_id))
     def get_valid_record(self, token):
-        self.sql_cursor.execute('SELECT * FROM my_app_profile WHERE token=%s' % token)
+        self.sql_cursor.execute(FIND_PROFILE_BY_TOKEN.format(token))
         for record in self.sql_cursor.fetchall():
             # return first match
             return record
@@ -118,7 +113,7 @@ class Validation():
             elif len(my_message) < MAX_LENGTH :
                 if valid_record:
                     # token is valid but message could not be sent
-                    self.update_failed(valid_record)
+                    self.update_user_counters(valid_record)
                 self.send_msg(QUEUE_HTTPLISTENER, BAD_LENGTH)
                 self.log.error(BAD_LENGTH)
             else:

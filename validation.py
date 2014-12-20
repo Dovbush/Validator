@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 import logging
 
@@ -29,9 +28,8 @@ BAD_LENGTH = "Error 400 - Bad requst, message is longer than %s" % MAX_LENGTH
 INVALID_TOKEN = "Error 406 - Invalid token."
 MISSING_ELEMENTS = "Error 400 - Bad requst, hex, token or message are missing"
 GET_USER_COUNTERS = "SELECT total_msg_counter, success_msg_counter, failed_msg_counter from my_app_msg WHERE user_id={0}"
-UPDATE_USER_COUNTERS = "UPDATE my_app_msg SET total_msg_counter={0}, success_msg_counter={1}, failed_msg_counter={2}  WHERE user_id={3}"
-FIND_PROFILE_BY_TOKEN = "SELECT * FROM my_app_profile WHERE token={0}"
-
+UPDATE_USER_COUNTERS = "UPDATE my_app_msg SET total_msg_counter={}, success_msg_counter={}, failed_msg_counter={}  WHERE user_id={}"
+FIND_PROFILE_BY_TOKEN = "SELECT * FROM my_app_profile WHERE token={}"
 
 class Validation():
     """
@@ -56,19 +54,17 @@ class Validation():
         log_hand.setFormatter(formatter)
         self.log.addHandler(log_hand)
         try:
-
             #self.sql_conn = sqlite3.connect('users.db') # or mysql db connect
             #mysql DB
             self.sql_conn =mysql.connector.connect(user='root', password='',
                               host='127.0.0.1',
                               database='yaps')
 
-            self.sql_cursor = conn.cursor()
+            self.sql_cursor = self.sql_conn.cursor()
             self.log.info(SQL_CONNECT_ON)
         except:
             self.log.exception(SQL_CONNECT_OFF)
             raise
-
         try:
             self.connection = pika.BlockingConnection(parameters)
             self.log.info(CONNECT_ON)
@@ -76,25 +72,24 @@ class Validation():
         except:
             self.log.exception(CONNECT_OFF)
             raise
-            quit()
 
-    def update_user_counters(self, result, is_valid):
-        is_valid = 1 if is_valid else 0
-
-    
-        id = result[0]
-        token = result[1]
-        user_id = result[2]
-        print id, token, user_id
+    def update_user_counters(self, record, is_valid):
+        
+        id = record[0]
+        token = record[1]
+        user_id = record[2]
+        self.log.info(id) #for debug
+        self.log.info(token) #for debug
+        self.log.info(user_id) #for debug
         self.sql_cursor.execute(GET_USER_COUNTERS.format(user_id))
         total, success, fail = self.sql_cursor.fetchone()
         self.sql_cursor.execute(UPDATE_USER_COUNTERS.format(total + 1, success + int(is_valid), fail + int(not is_valid),  user_id))
     
-
     def get_valid_record(self, token):
         self.sql_cursor.execute(FIND_PROFILE_BY_TOKEN.format(token))
         result = self.sql_cursor.fetchone()
         return result
+
 
     def valid(self):
         """Every messages must have 3 elements: hex, token and message
@@ -129,12 +124,15 @@ class Validation():
         """The function takes message from the queue"""
 
         self.channel.queue_declare(my_queue)
-        for method_frame, properties, body in self.channel.consume(my_queue):
-            print body
-            self.log.info(CONNECT_ON)
-            self.log.info(body)
-            self.channel.basic_ack(method_frame.delivery_tag)
-            return body
+        try:
+            for method_frame, properties, body in self.channel.consume(my_queue):
+                self.log.info(CONNECT_ON)
+                self.log.info(body)
+                self.channel.basic_ack(method_frame.delivery_tag)
+                return body
+        except pika.exceptions, err_msg:
+            self.log.error(err_msg)
+            return False
 
     def send_msg(self, my_queue, msg_body):
         """The function send message to another queue"""
@@ -147,4 +145,4 @@ if __name__ == '__main__':
     v = Validation()
     while True:
         v.valid()
-        sleep(0.5)
+        sleep(0.05)

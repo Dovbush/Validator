@@ -99,9 +99,9 @@ class Validation():
         test_msg = my_msg.split(":")
         queue_uuid = test_msg[1]
         my_message = test_msg[2]
-        #valid_record = self.get_valid_record(queue_uuid)
+        valid_record = self.get_valid_record(queue_uuid)
         if len(test_msg) == MAX_NUMBER_FIELD and len(my_message) < MAX_LENGTH and valid_record:
-                #self.update_user_counters(valid_record)
+                self.update_user_counters(valid_record)
                 self.log.info(GOOD_MSG + " " + my_message)
                 self.send_msg(QUEUE_MSG_ALL, my_message)
                 self.send_msg((QUEUE_UUID + queue_uuid), my_message)
@@ -111,9 +111,9 @@ class Validation():
                 self.send_msg(QUEUE_HTTPLISTENER, MISSING_ELEMENTS)
                 self.log.error(MISSING_ELEMENTS)
             elif len(my_message) < MAX_LENGTH :
-                #if valid_record:
+                if valid_record:
                     # token is valid but message could not be sent
-                    #self.update_user_counters(valid_record)
+                    self.update_user_counters(valid_record)
                 self.send_msg(QUEUE_HTTPLISTENER, BAD_LENGTH)
                 self.log.error(BAD_LENGTH)
             else:

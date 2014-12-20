@@ -9,7 +9,7 @@ from time import sleep
 
 import mysql.connector
 
-LOG_LOCATION= "validation.log"
+LOG_LOCATION= "/opt/lv128/log/validation.log"
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 
 QUEUE_VALIDATION = "validation.messages"

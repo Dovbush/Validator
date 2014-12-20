@@ -78,18 +78,23 @@ class Validation():
             raise
             quit()
 
-    def update_user_counters(self, record, is_valid):
+    def update_user_counters(self, result, is_valid):
         is_valid = 1 if is_valid else 0
 
-        id, token, user_id = record
+    
+        id = result[0]
+        token = result[1]
+        user_id = result[2]
+        print id, token, user_id
         self.sql_cursor.execute(GET_USER_COUNTERS.format(user_id))
         total, success, fail = self.sql_cursor.fetchone()
         self.sql_cursor.execute(UPDATE_USER_COUNTERS.format(total + 1, success + int(is_valid), fail + int(not is_valid),  user_id))
+    
+
     def get_valid_record(self, token):
         self.sql_cursor.execute(FIND_PROFILE_BY_TOKEN.format(token))
-        for record in self.sql_cursor.fetchall():
-            # return first match
-            return record
+        result = self.sql_cursor.fetchone()
+        return result
 
     def valid(self):
         """Every messages must have 3 elements: hex, token and message
@@ -101,7 +106,7 @@ class Validation():
         my_message = test_msg[2]
         valid_record = self.get_valid_record(queue_uuid)
         if len(test_msg) == MAX_NUMBER_FIELD and len(my_message) < MAX_LENGTH and valid_record:
-                self.update_user_counters(valid_record)
+                self.update_user_counters(valid_record, 1)
                 self.log.info(GOOD_MSG + " " + my_message)
                 self.send_msg(QUEUE_MSG_ALL, my_message)
                 self.send_msg((QUEUE_UUID + queue_uuid), my_message)
@@ -113,7 +118,7 @@ class Validation():
             elif len(my_message) < MAX_LENGTH :
                 if valid_record:
                     # token is valid but message could not be sent
-                    self.update_user_counters(valid_record)
+                    self.update_user_counters(valid_record, 0)
                 self.send_msg(QUEUE_HTTPLISTENER, BAD_LENGTH)
                 self.log.error(BAD_LENGTH)
             else:

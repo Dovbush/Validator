@@ -1,13 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import logging
-
-import sqlite3 # or mysql connector
-
 import pika
 from time import sleep
-
-import mysql.connector
 
 LOG_LOCATION= "/opt/lv128/log/validation.log"
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
@@ -15,7 +10,7 @@ LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 QUEUE_VALIDATION = "validation.messages"
 QUEUE_HTTPLISTENER = "httplistener"
 QUEUE_MSG_ALL = "message.all"
-QUEUE_UUID = "message."
+QUEUE_BY_TOKEN = "message."
 RABBITMQ_SERVER = "localhost"
 CONNECT_ON = "connected to rabbitmq"
 CONNECT_OFF = "no connection to rabbitmq"
@@ -40,7 +35,6 @@ class Validation():
     """
 
     def __init__(self):
-       # credentials = pika.PlainCredentials('guest', 'guest')
         credentials = pika.PlainCredentials('lv128', 'lv128')
         parameters = pika.ConnectionParameters('localhost',
                                        5672,
@@ -94,14 +88,14 @@ class Validation():
 
         my_msg = self.get_msg(QUEUE_VALIDATION)
         test_msg = my_msg.split(":")
-        queue_uuid = test_msg[1]
+        queue_by_token = test_msg[1]
         my_message = test_msg[2]
-        valid_record = self.get_valid_record(queue_uuid)
+        #valid_record = self.get_valid_record(queue_by_token)
         if len(test_msg) == MAX_NUMBER_FIELD and len(my_message) < MAX_LENGTH and valid_record:
                 self.update_user_counters(valid_record)
                 self.log.info(GOOD_MSG + " " + my_message)
                 self.send_msg(QUEUE_MSG_ALL, my_message)
-                self.send_msg((QUEUE_UUID + queue_uuid), my_message)
+                self.send_msg((QUEUE_BY_TOKEN + queue_by_token), my_message)
                 self.send_msg(QUEUE_HTTPLISTENER, GOOD_MSG)
         else:
             if len(test_msg) != MAX_NUMBER_FIELD :
@@ -110,7 +104,7 @@ class Validation():
             elif len(my_message) < MAX_LENGTH :
                 if valid_record:
                     # token is valid but message could not be sent
-                    self.update_user_counters(valid_record)
+                    #self.update_user_counters(valid_record)
                 self.send_msg(QUEUE_HTTPLISTENER, BAD_LENGTH)
                 self.log.error(BAD_LENGTH)
             else:

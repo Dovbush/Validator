@@ -61,7 +61,7 @@ class Validation():
         try:
             
             self.sql_conn = mysql.connector.connect(user=DB_USER, password=DB_PASSWORD,
-                              host=DB_PASSWORD,
+                              host=DB_SERVER,
                               database=DB_NAME)
 
             self.sql_cursor = self.sql_conn.cursor()

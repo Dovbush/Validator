@@ -35,9 +35,9 @@ INVALID_TOKEN = "Error 406 - Invalid token."
 MISSING_ELEMENTS = "Error 400 - Bad requst, hex, token or message are missing"
 GET_USER_COUNTERS = "SELECT total_msg_counter, success_msg_counter, failed_msg_counter from my_app_msg WHERE user_id={}"
 UPDATE_USER_COUNTERS = "UPDATE my_app_msg SET total_msg_counter={}, success_msg_counter = {}, failed_msg_counter = {} WHERE user_id ={}"
-FIND_PROFILE_BY_TOKEN = "SELECT * FROM my_app_profile WHERE token={}"
+FIND_PROFILE_BY_TOKEN = "SELECT * FROM my_app_profile WHERE token='{}'"
 SELECT_COUNTERS_BY_ID = "SELECT total_msg_counter, success_msg_counter, failed_msg_counter FROM my_app_msg WHERE user_id={}"
-SELECT_USER_BY_TOKEN = "SELECT * FROM my_app_profile WHERE token = {}"
+SELECT_USER_BY_TOKEN = "SELECT * FROM my_app_profile WHERE token = '{}'"
 class Validation():
     """
     the message form validation queue is moving to the next queue

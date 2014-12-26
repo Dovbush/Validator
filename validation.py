@@ -10,24 +10,34 @@ QUEUE_VALIDATION = "validation.messages"
 QUEUE_HTTPLISTENER = "httplistener"
 QUEUE_MSG_ALL = "message.all"
 QUEUE_UUID = "message."
-RABBITMQ_SERVER = "localhost"
+
+RABBITMQ_SERVER = "127.0.0.1"
+RABBITMQ_USER = "lv128"
+RABBITMQ_PASSWORD = "lv128"
+RABBITMQ_PORT = 5672
+
 CONNECT_ON = "connected to rabbitmq"
 CONNECT_OFF = "no connection to rabbitmq"
 SQL_CONNECT_ON = "connected to sql"
 SQL_CONNECT_OFF = "no connection to sql"
 EMPTY = "can't consume - queue is empty"
-MAX_LENGTH = 12
+MAX_LENGTH = 128
 MAX_NUMBER_FIELD = 3
+
+DB_SERVER = "127.0.0.1"
+DB_USER = "root"
+DB_PASSWORD = ''
+DB_NAME = 'yaps'
+
 GOOD_MSG = "Response 200 - OK"
 BAD_LENGTH = "Error 400 - Bad requst, message is longer than %s" % MAX_LENGTH
 INVALID_TOKEN = "Error 406 - Invalid token."
 MISSING_ELEMENTS = "Error 400 - Bad requst, hex, token or message are missing"
 GET_USER_COUNTERS = "SELECT total_msg_counter, success_msg_counter, failed_msg_counter from my_app_msg WHERE user_id={0}"
-UPDATE_USER_COUNTERS = "UPDATE my_app_msg SET total_msg_counter={0}, success_msg_counter={1}, failed_msg_counter={2}  WHERE user_id={3}"
-FIND_PROFILE_BY_TOKEN = "SELECT * FROM my_app_profile WHERE token='{0}'"
-UPDATE_USER_COUNTERS = "UPDATE my_app_msg SET total_msg_counter={}, success_msg_counter={}, failed_msg_counter={}  WHERE user_id={}"
+UPDATE_USER_COUNTERS = "UPDATE my_app_msg SET total_msg_counter=" + str(total) + ", success_msg_counter = " + str(success) +", failed_msg_counter ="+  str(fail) + " WHERE user_id =" + str(user_id)
 FIND_PROFILE_BY_TOKEN = "SELECT * FROM my_app_profile WHERE token={}"
-
+SELECT_COUNTERS_BY_ID = "SELECT total_msg_counter, success_msg_counter, failed_msg_counter FROM my_app_msg WHERE user_id="+str(user_id)
+SELECT_USER_BY_TOKEN = "SELECT * FROM my_app_profile WHERE token =" + str(token)
 class Validation():
     """
     the message form validation queue is moving to the next queue
@@ -36,9 +46,9 @@ class Validation():
     """
 
     def __init__(self):
-        credentials = pika.PlainCredentials('lv128', 'lv128')
-        parameters = pika.ConnectionParameters('localhost',
-                                       5672,
+        credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASSWORD)
+        parameters = pika.ConnectionParameters(RABBITMQ_SERVER,
+                                       RABBITMQ_PORT,
                                        '/',
                                        credentials)
         self.log = logging.getLogger(LOG_LOCATION)
@@ -50,9 +60,9 @@ class Validation():
         self.log.addHandler(log_hand)
         try:
             
-            self.sql_conn =mysql.connector.connect(user='root', password='',
-                              host='127.0.0.1',
-                              database='yaps')
+            self.sql_conn = mysql.connector.connect(user=DB_USER, password=DB_PASSWORD,
+                              host=DB_PASSWORD,
+                              database=DB_NAME)
 
             self.sql_cursor = self.sql_conn.cursor()
             self.log.info(SQL_CONNECT_ON)
@@ -71,41 +81,24 @@ class Validation():
         id = record[0]
         token = record[1]
         user_id = record[2]
-        print user_id, "user id"
-        self.log.info(id) #for debug
-        self.log.info(token) #for debug
-        self.log.info(user_id) #for debug
-        self.sql_cursor.execute("SELECT total_msg_counter, success_msg_counter, failed_msg_counter from my_app_msg WHERE user_id="+str(user_id))
-
+        self.sql_cursor.execute(SELECT_COUNTERS_BY_ID)
         result = self.sql_cursor.fetchone()
         total = result[0] + 1
         success = result[1]
         fail = result[2]
-        print is_valid, "valid"
         if is_valid:
-            print "valid"
             success = success + 1
         else:
-            print "invalid"
-            fail = fail + 1
-        print total, success, fail
-        #self.sql_cursor.execute("UPDATE my_app_msg SET total_msg_counter='12', success_msg_counter='1', failed_msg_counter='1' where user_id$
-        self.sql_cursor.execute("UPDATE my_app_msg SET total_msg_counter=" + str(total) + ", success_msg_counter = " + str(success) +", failed_msg_counter ="+  str(fail) + " WHERE user_id =" + str(user_id) )
-        #self.sql_cursor.execute("UPDATE my_app_msg SET total_msg_counter=" + str(total) + ", success_msg_counter = " + str(success) +", faile$
+            fail = fail + 1 
+        self.sql_cursor.execute(UPDATE_USER_COUNTERS)
         self.sql_conn.commit()
-        #print "UPDATE my_app_msg SET total_msg_counter=" + str(total) + ", success_msg_counter = " + str(success) + ",failed_msg_counter ="+  str(fail) + " WHERE user_id =" + str(user_id) )
-        #print "UPDATE my_app_msg SET total_msg_counter=" + str(total) + ", success_msg_counter = " + str(success) + ",failed_msg_counter ="+ $
- 
-
         id, token, user_id = record
         self.sql_cursor.execute(GET_USER_COUNTERS.format(user_id))
         total, success, fail = self.sql_cursor.fetchone()
-        self.sql_cursor.execute(UPDATE_USER_COUNTERS.format(total + 1, success + int(is_valid), fail + int(not is_valid),  user_id))
+        self.sql_cursor.execute(UPDATE_USER_COUNTERS)
     
     def get_valid_record(self, token):
-        print token
-       # self.sql_cursor.execute(FIND_PROFILE_BY_TOKEN.format(token))
-        self.sql_cursor.execute("SELECT * FROM my_app_profile WHERE token ='" + token + "'")
+        self.sql_cursor.execute(SELECT_USER_BY_TOKEN)
         result = self.sql_cursor.fetchone()
         return result
 

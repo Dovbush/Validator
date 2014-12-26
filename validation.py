@@ -34,10 +34,10 @@ BAD_LENGTH = "Error 400 - Bad requst, message is longer than %s" % MAX_LENGTH
 INVALID_TOKEN = "Error 406 - Invalid token."
 MISSING_ELEMENTS = "Error 400 - Bad requst, hex, token or message are missing"
 GET_USER_COUNTERS = "SELECT total_msg_counter, success_msg_counter, failed_msg_counter from my_app_msg WHERE user_id={0}"
-UPDATE_USER_COUNTERS = "UPDATE my_app_msg SET total_msg_counter=" + str(total) + ", success_msg_counter = " + str(success) +", failed_msg_counter ="+  str(fail) + " WHERE user_id =" + str(user_id)
+UPDATE_USER_COUNTERS = "UPDATE my_app_msg SET total_msg_counter={0}, success_msg_counter = {1}, failed_msg_counter = {2} WHERE user_id ={3}"
 FIND_PROFILE_BY_TOKEN = "SELECT * FROM my_app_profile WHERE token={}"
-SELECT_COUNTERS_BY_ID = "SELECT total_msg_counter, success_msg_counter, failed_msg_counter FROM my_app_msg WHERE user_id="+str(user_id)
-SELECT_USER_BY_TOKEN = "SELECT * FROM my_app_profile WHERE token =" + str(token)
+SELECT_COUNTERS_BY_ID = "SELECT total_msg_counter, success_msg_counter, failed_msg_counter FROM my_app_msg WHERE user_id={0}"
+SELECT_USER_BY_TOKEN = "SELECT * FROM my_app_profile WHERE token = {0}"
 class Validation():
     """
     the message form validation queue is moving to the next queue
@@ -81,7 +81,7 @@ class Validation():
         id = record[0]
         token = record[1]
         user_id = record[2]
-        self.sql_cursor.execute(SELECT_COUNTERS_BY_ID)
+        self.sql_cursor.execute(SELECT_COUNTERS_BY_ID.format(user_id))
         result = self.sql_cursor.fetchone()
         total = result[0] + 1
         success = result[1]
@@ -90,15 +90,15 @@ class Validation():
             success = success + 1
         else:
             fail = fail + 1 
-        self.sql_cursor.execute(UPDATE_USER_COUNTERS)
+        self.sql_cursor.execute(UPDATE_USER_COUNTERS.format(str(total), str(success), str(fail), str(user_id)))
         self.sql_conn.commit()
         id, token, user_id = record
-        self.sql_cursor.execute(GET_USER_COUNTERS.format(user_id))
+        self.sql_cursor.execute(GET_USER_COUNTERS.format(str(user_id)))
         total, success, fail = self.sql_cursor.fetchone()
-        self.sql_cursor.execute(UPDATE_USER_COUNTERS)
+        self.sql_cursor.execute(UPDATE_USER_COUNTERS.format(str(total), str(success), str(fail), str(user_id)))
     
     def get_valid_record(self, token):
-        self.sql_cursor.execute(SELECT_USER_BY_TOKEN)
+        self.sql_cursor.execute(SELECT_USER_BY_TOKEN.format(str(token)))
         result = self.sql_cursor.fetchone()
         return result
 

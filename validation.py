@@ -28,11 +28,11 @@ DB_SERVER = "127.0.0.1"
 DB_USER = "root"
 DB_PASSWORD = ''
 DB_NAME = 'yaps'
+GOOD_MSG = "200|Response 200 - OK"
+BAD_LENGTH = "400|Error 400 - Bad requst, message is longer than %s" % MAX_LENGTH
+INVALID_TOKEN = "406|Error 406 - Invalid token."
+MISSING_ELEMENTS = "400|Error 400 - Bad requst, hex, token or message are missing"
 
-GOOD_MSG = "Response 200 - OK"
-BAD_LENGTH = "Error 400 - Bad requst, message is longer than %s" % MAX_LENGTH
-INVALID_TOKEN = "Error 406 - Invalid token."
-MISSING_ELEMENTS = "Error 400 - Bad requst, hex, token or message are missing"
 GET_USER_COUNTERS = "SELECT total_msg_counter, success_msg_counter, failed_msg_counter from my_app_msg WHERE user_id={}"
 UPDATE_USER_COUNTERS = "UPDATE my_app_msg SET total_msg_counter={}, success_msg_counter = {}, failed_msg_counter = {} WHERE user_id ={}"
 FIND_PROFILE_BY_TOKEN = "SELECT * FROM my_app_profile WHERE token='{}'"
@@ -59,7 +59,7 @@ class Validation():
         log_hand.setFormatter(formatter)
         self.log.addHandler(log_hand)
         try:
-            
+
             self.sql_conn = mysql.connector.connect(user=DB_USER, password=DB_PASSWORD,
                               host=DB_SERVER,
                               database=DB_NAME)
@@ -89,14 +89,14 @@ class Validation():
         if is_valid:
             success = success + 1
         else:
-            fail = fail + 1 
+            fail = fail + 1
         self.sql_cursor.execute(UPDATE_USER_COUNTERS.format(str(total), str(success), str(fail), str(user_id)))
         self.sql_conn.commit()
         id, token, user_id = record
         self.sql_cursor.execute(GET_USER_COUNTERS.format(str(user_id)))
         total, success, fail = self.sql_cursor.fetchone()
         self.sql_cursor.execute(UPDATE_USER_COUNTERS.format(str(total), str(success), str(fail), str(user_id)))
-    
+
     def get_valid_record(self, token):
         self.sql_cursor.execute(SELECT_USER_BY_TOKEN.format(str(token)))
         result = self.sql_cursor.fetchone()

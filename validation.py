@@ -110,13 +110,14 @@ class Validation():
         test_msg = my_msg.split(":")
         queue_uuid = test_msg[1]
         my_message = test_msg[2]
+        sleep(0.1)
         valid_record = self.get_valid_record(queue_uuid)
         if len(test_msg) == MAX_NUMBER_FIELD and len(my_message) < MAX_LENGTH and not (type(valid_record) is NoneType):
-                self.log.info(GOOD_MSG + " " + my_message)
-                self.send_msg(QUEUE_MSG_ALL, my_message)
-                self.send_msg((QUEUE_UUID + queue_uuid), my_message)
-                self.send_msg(QUEUE_HTTPLISTENER, GOOD_MSG)
-                self.update_user_counters(valid_record, 1)
+            self.log.info(GOOD_MSG + " " + my_message)
+            self.send_msg(QUEUE_MSG_ALL, my_message)
+            self.send_msg((QUEUE_UUID + queue_uuid), my_message)
+            self.send_msg(QUEUE_HTTPLISTENER, GOOD_MSG)
+            self.update_user_counters(valid_record, 1)
         else:
             if len(test_msg) != MAX_NUMBER_FIELD :
                 self.send_msg(QUEUE_HTTPLISTENER, MISSING_ELEMENTS)
@@ -155,4 +156,4 @@ if __name__ == '__main__':
     v = Validation()
     while True:
         v.valid()
-        sleep(0.05)
+        sleep(0.2)

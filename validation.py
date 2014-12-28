@@ -31,7 +31,7 @@ DB_NAME = 'yaps'
 GOOD_MSG = "200|Response 200 - OK."
 BAD_LENGTH = "400|Error 400 - Bad requst, message is longer than %s" % MAX_LENGTH
 INVALID_TOKEN = "406|Error 406 - Invalid token."
-MISSING_ELEMENTS = "400|Error 400 - Bad requst, hex, token or message are missing"
+MISSING_ELEMENTS = "400|Error 400 - Bad requst, hex, token or message is missing"
 
 GET_USER_COUNTERS = "SELECT total_msg_counter, success_msg_counter, failed_msg_counter from my_app_msg WHERE user_id={}"
 UPDATE_USER_COUNTERS = "UPDATE my_app_msg SET total_msg_counter={}, success_msg_counter = {}, failed_msg_counter = {} WHERE user_id ={}"
@@ -111,12 +111,12 @@ class Validation():
         queue_uuid = test_msg[1]
         my_message = test_msg[2]
         valid_record = self.get_valid_record(queue_uuid)
-        if len(test_msg) == MAX_NUMBER_FIELD and len(my_message) < MAX_LENGTH and not  (type(valid_record) is NoneType):
-                self.update_user_counters(valid_record, 1)
+        if len(test_msg) == MAX_NUMBER_FIELD and len(my_message) < MAX_LENGTH and not (type(valid_record) is NoneType):
                 self.log.info(GOOD_MSG + " " + my_message)
                 self.send_msg(QUEUE_MSG_ALL, my_message)
                 self.send_msg((QUEUE_UUID + queue_uuid), my_message)
                 self.send_msg(QUEUE_HTTPLISTENER, GOOD_MSG)
+                self.update_user_counters(valid_record, 1)
         else:
             if len(test_msg) != MAX_NUMBER_FIELD :
                 self.send_msg(QUEUE_HTTPLISTENER, MISSING_ELEMENTS)

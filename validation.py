@@ -78,8 +78,6 @@ class Validation():
             raise
 
     def update_user_counters(self, record, is_valid):
-        if (type(record) is NoneType): 
-            return False
         id = record[0]
         token = record[1]
         user_id = record[2]
@@ -99,7 +97,6 @@ class Validation():
         total, success, fail = self.sql_cursor.fetchone()
         self.sql_cursor.execute(UPDATE_USER_COUNTERS.format(str(total), str(success), str(fail), str(user_id)))
 
-
     def get_valid_record(self, token):
         self.sql_cursor.execute(SELECT_USER_BY_TOKEN.format(str(token)))
         result = self.sql_cursor.fetchone()
@@ -115,7 +112,7 @@ class Validation():
         my_message = test_msg[2]
         sleep(0.1)
         valid_record = self.get_valid_record(queue_uuid)
-        if len(test_msg) == MAX_NUMBER_FIELD and len(my_message) < MAX_LENGTH :
+        if len(test_msg) == MAX_NUMBER_FIELD and len(my_message) < MAX_LENGTH and not (type(valid_record) is NoneType):
             self.log.info(GOOD_MSG + " " + my_message)
             self.send_msg(QUEUE_MSG_ALL, my_message)
             self.send_msg((QUEUE_UUID + queue_uuid), my_message)
